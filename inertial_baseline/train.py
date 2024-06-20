@@ -21,8 +21,9 @@ from inertial_baseline.AttendAndDiscriminate import AttendAndDiscriminate
 from inertial_baseline.DeepConvLSTM import DeepConvLSTM
 from camera_baseline.actionformer.libs.utils.metrics import ANETdetection
 
+import augmentation as aug
 
-def run_inertial_network(train_sbjs, val_sbjs, cfg, ckpt_folder, ckpt_freq, resume, rng_generator, run):
+def run_inertial_network(train_sbjs, val_sbjs, cfg, ckpt_folder, ckpt_freq, resume, rng_generator, run, augmentation_choice):
     split_name = cfg['dataset']['json_anno'].split('/')[-1].split('.')[0]
     # load train and val inertial data
     train_data, val_data = np.empty((0, cfg['dataset']['input_dim'] + 2)), np.empty((0, cfg['dataset']['input_dim'] + 2))
@@ -86,7 +87,7 @@ def run_inertial_network(train_sbjs, val_sbjs, cfg, ckpt_folder, ckpt_freq, resu
     net.to(cfg['devices'][0])
     for epoch in range(start_epoch, cfg['train_cfg']['epochs']):
         # training
-        net, t_losses, _, _ = train_one_epoch(train_loader, net, opt, criterion, cfg['devices'][0])
+        net, t_losses, _, _ = train_one_epoch(train_loader, net, opt, criterion, cfg['devices'][0], augmentation_choice)
 
         # save ckpt once in a while
         if (((ckpt_freq > 0) and ((epoch + 1) % ckpt_freq == 0))):
@@ -157,11 +158,16 @@ def run_inertial_network(train_sbjs, val_sbjs, cfg, ckpt_folder, ckpt_freq, resu
     return t_losses, v_losses, v_mAP, v_preds, v_gt
 
 
-def train_one_epoch(loader, network, opt, criterion, gpu=None):
+def train_one_epoch(loader, network, opt, criterion, gpu=None, augmentation_choice=None):
     losses, preds, gt = [], [], []
 
     network.train()
     for i, (inputs, targets) in enumerate(loader):
+        if augmentation_choice:
+            aug_inputs, aug_targets = aug.apply_augmentation(augmentation_choice, inputs, targets)
+            inputs = torch.cat((inputs, aug_inputs), dim=0)
+            targets = torch.cat((targets, aug_targets), dim=0)
+
         if gpu is not None:
             inputs, targets = inputs.to(gpu), targets.to(gpu)
         

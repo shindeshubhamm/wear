@@ -27,6 +27,7 @@ import matplotlib.pyplot as plt
 from camera_baseline.actionformer.main import run_actionformer
 from camera_baseline.tridet.main import run_tridet
 
+import augmentation as aug
 
 def main(args):
     if args.neptune:
@@ -60,6 +61,9 @@ def main(args):
     all_v_pred = np.array([])
     all_v_gt = np.array([])
     all_v_mAP = np.empty((0, len(config['dataset']['tiou_thresholds'])))
+
+    # augmentation choice as passed via command line arg
+    augmentation_choice = args.augmentation
         
     for i, anno_split in enumerate(config['anno_json']):
         with open(anno_split) as f:
@@ -71,6 +75,9 @@ def main(args):
         val_sbjs = [x for x in anno_file if anno_file[x]['subset'] == 'Validation']
 
         print('Split {} / {}'.format(i + 1, len(config['anno_json'])))
+        if augmentation_choice:
+            print(f'Augmentation using: {augmentation_choice}')
+
         if args.eval_type == 'split':
             name = 'split_' + str(i)
         elif args.eval_type == 'loso':
@@ -80,7 +87,7 @@ def main(args):
             config['dataset']['json_info'] = config['info_json'][i]
 
         if config['name'] == 'deepconvlstm' or config['name'] == 'attendanddiscriminate':
-            t_losses, v_losses, v_mAP, v_preds, v_gt = run_inertial_network(train_sbjs, val_sbjs, config, log_dir, args.ckpt_freq, args.resume, rng_generator, run)
+            t_losses, v_losses, v_mAP, v_preds, v_gt = run_inertial_network(train_sbjs, val_sbjs, config, log_dir, args.ckpt_freq, args.resume, rng_generator, run, augmentation_choice)
         elif config['name'] == 'actionformer':
             t_losses, v_losses, v_mAP, v_preds, v_gt = run_actionformer(val_sbjs, config, log_dir, args.ckpt_freq, args.resume, rng_generator, run)
         elif config['name'] == 'tridet':
@@ -178,6 +185,7 @@ if __name__ == '__main__':
     parser.add_argument('--ckpt-freq', default=-1, type=int)
     parser.add_argument('--resume', default='', type=str)
     parser.add_argument('--gpu', default='cuda:0', type=str)
+    parser.add_argument('--augmentation', default=None, type=str, choices=aug.augmentation_choices)
     args = parser.parse_args()
     main(args)  
 
