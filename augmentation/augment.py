@@ -5,6 +5,7 @@ from typing import Tuple
 # import augmentation methods
 from .cutmix import apply_cutmix
 from .mixup import apply_mixup
+from .jittering import apply_jittering
 
 def apply_augmentation(augmentation_choice: str, data: torch.Tensor, labels: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
     """
@@ -27,6 +28,9 @@ def apply_augmentation(augmentation_choice: str, data: torch.Tensor, labels: tor
         
         case 'mixup':
             return apply_mixup(data, labels)
+        
+        case 'jittering':
+            return apply_jittering(data, labels)
 
         case _:
             return data, labels
