@@ -3,7 +3,7 @@ import torch
 from typing import Tuple
 
 # import augmentation methods
-from .cutmix import apply_cutmix
+from .cutmix import apply_cutmix, apply_s1, apply_s2
 from .mixup import apply_mixup
 from .jittering import apply_jittering
 
@@ -25,6 +25,12 @@ def apply_augmentation(augmentation_choice: str, data: torch.Tensor, labels: tor
     match augmentation_choice:
         case 'cutmix':
             return apply_cutmix(data, labels)
+        
+        case 's1': # apply cutmix to arm modality only
+            return apply_s1(data, labels)
+        
+        case 's2': # apply cutmix to leg modality only
+            return apply_s2(data, labels)
         
         case 'mixup':
             return apply_mixup(data, labels)
