@@ -4,7 +4,7 @@ from typing import Tuple
 
 # import augmentation methods
 from .cutmix import apply_cutmix, apply_s1, apply_s2
-from .mixup import apply_mixup
+from .mixup import apply_mixup, apply_s3, apply_s4
 from .jittering import apply_jittering
 
 def apply_augmentation(augmentation_choice: str, data: torch.Tensor, labels: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -34,6 +34,12 @@ def apply_augmentation(augmentation_choice: str, data: torch.Tensor, labels: tor
         
         case 'mixup':
             return apply_mixup(data, labels)
+        
+        case 's3': # apply mixup to arm modality only
+            return apply_s3(data, labels)
+
+        case 's4': # apply mixup to leg modality only
+            return apply_s4(data, labels)
         
         case 'jittering':
             return apply_jittering(data, labels)
