@@ -44,5 +44,11 @@ def apply_augmentation(augmentation_choice: str, data: torch.Tensor, labels: tor
         case 'jittering':
             return apply_jittering(data, labels)
 
+        case 'js1':  # apply cutmix to leg modality only
+            return apply_s1_jitter(data, labels)
+
+        case 'js2':  # apply cutmix to leg modality only
+            return apply_s2_jitter(data, labels)
+
         case _:
             return data, labels
