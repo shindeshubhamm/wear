@@ -17,20 +17,6 @@ def apply_jittering(data: torch.Tensor, labels: torch.Tensor, alpha: float = 1.0
     """
     
     
-   
-def apply_jittering(x: torch.Tensor, y: torch.Tensor, sigma = 0.8) -> Tuple[torch.Tensor, torch.Tensor]:
-    """
-    Apply Jittering augmentation to HAR data.
-    
-    Parameters:
-    data (torch.Tensor): Input data of shape (num_samples, window_size, num_features)
-    labels (torch.Tensor): Labels corresponding to the data of shape (num_samples,)
-    alpha (float): Parameter for the beta distribution. Controls the area to cut and mix.
-    
-    Returns:
-    torch.Tensor, torch.Tensor: Augmented data and corresponding labels.
-    """
-
     # Ensure the input tensor is on CPU
     x_cpu = x.cpu() if x.is_cuda else x
 
@@ -103,3 +89,4 @@ def apply_s2_jitter(x: torch.Tensor, y: torch.Tensor, sigma: float = 0.8) -> Tup
         jittered_x = jittered_x.to(x.device)
 
     return jittered_x, y
+ 
