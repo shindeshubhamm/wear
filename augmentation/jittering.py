@@ -3,7 +3,7 @@ from typing import Tuple
 import torch
 
 
-def apply_jittering(x: torch.Tensor, labels: torch.Tensor, alpha: float = 0.5) -> Tuple[torch.Tensor, torch.Tensor]:
+def apply_jittering(x: torch.Tensor, labels: torch.Tensor, sigma: float = 0.8) -> Tuple[torch.Tensor, torch.Tensor]:
     """
     Apply Jittering augmentation to HAR data.
     
