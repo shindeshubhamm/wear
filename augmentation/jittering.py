@@ -3,7 +3,7 @@ from typing import Tuple
 import torch
 
 
-def apply_jittering(data: torch.Tensor, labels: torch.Tensor, alpha: float = 1.0) -> Tuple[torch.Tensor, torch.Tensor]:
+def apply_jittering(x: torch.Tensor, labels: torch.Tensor, alpha: float = 0.5) -> Tuple[torch.Tensor, torch.Tensor]:
     """
     Apply Jittering augmentation to HAR data.
     
@@ -30,9 +30,9 @@ def apply_jittering(data: torch.Tensor, labels: torch.Tensor, alpha: float = 1.0
     if x.is_cuda:
         jittered_x = jittered_x.to(x.device)
 
-    return jittered_x,y
+    return jittered_x,labels
 
-def apply_s1_jitter(x: torch.Tensor, y: torch.Tensor, sigma: float = 0.8) -> Tuple[torch.Tensor, torch.Tensor]:
+def apply_s1_jitter(x: torch.Tensor, labels: torch.Tensor, sigma: float = 0.8) -> Tuple[torch.Tensor, torch.Tensor]:
     """
     Apply Jittering augmentation to HAR data.
 
@@ -59,9 +59,9 @@ def apply_s1_jitter(x: torch.Tensor, y: torch.Tensor, sigma: float = 0.8) -> Tup
     if x.is_cuda:
         jittered_x = jittered_x.to(x.device)
 
-    return jittered_x, y
+    return jittered_x, labels
 
-def apply_s2_jitter(x: torch.Tensor, y: torch.Tensor, sigma: float = 0.8) -> Tuple[torch.Tensor, torch.Tensor]:
+def apply_s2_jitter(x: torch.Tensor, labels: torch.Tensor, sigma: float = 0.8) -> Tuple[torch.Tensor, torch.Tensor]:
     """
     Apply Jittering augmentation to HAR data.
 
@@ -88,5 +88,5 @@ def apply_s2_jitter(x: torch.Tensor, y: torch.Tensor, sigma: float = 0.8) -> Tup
     if x.is_cuda:
         jittered_x = jittered_x.to(x.device)
 
-    return jittered_x, y
+    return jittered_x, labels
  
