@@ -73,14 +73,12 @@ def main(args):
     ckpt_path: str = args.ckpt_path
     testdata_path: str = args.test_data
 
-
     if not model_name:
         raise ValueError('model_name cannot be empty.')
     if not ckpt_path:
         raise ValueError('checkpoint cannot be empty.')
     if not testdata_path:
         raise ValueError('test_data cannot be empty.')
-
 
     # load all csv files from testdata_path
     test_data = np.empty((0, input_dim + 1))
@@ -112,6 +110,8 @@ def main(args):
             lstm_layers,
             dropout,
         )
+    elif model_name == 'attendanddiscriminate':
+        model = AttendAndDiscriminate(input_dim, 19, 1024, 64, 11, 1, False, 0.5, 0.0, 0.5, 'ReLU', 1)
     else:
         raise ValueError('Unsupported model name.')
 
@@ -127,7 +127,7 @@ def main(args):
             inputs = torch.FloatTensor(inputs).to('cpu')  # Ensure input data is on the correct device
             predictions = model(inputs)
             all_predictions.append(predictions)
-    
+
     all_predictions = torch.cat(all_predictions, dim=0)
     predicted_labels = torch.argmax(all_predictions, dim=1).numpy()
 
@@ -147,7 +147,6 @@ def main(args):
     df_predictions['label'] = df_predictions['label'].astype(int).map(labels_dict)
     df_predictions['sbj_id'] = df_predictions['sbj_id'].astype(int)
 
-
     # create directory for prediction files
     ts = datetime.datetime.fromtimestamp(int(time.time()))
     pred_logs_dir = os.path.join('logs_pred', model_name, str(ts))
@@ -157,7 +156,7 @@ def main(args):
     for sbj in df_predictions['sbj_id'].unique():
         sbj_data = df_predictions[df_predictions['sbj_id'] == sbj]
         output_path = os.path.join(pred_logs_dir, f'sbj_{sbj}_2.csv' if sbj < 18 else f'sbj_{sbj}.csv')
-        sbj_data.to_csv(output_path, index=False)    
+        sbj_data.to_csv(output_path, index=False)
 
     print(f'Predictions saved to {pred_logs_dir}')
 
