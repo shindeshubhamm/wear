@@ -3,8 +3,7 @@ Augmentation Module
 ===================
 """
 
-
-augmentation_choices = ['autoaughar', 'cutmix', 'jittering', 'mixup', 's1', 's2', 's3', 's4',, 'js1','js2']
+augmentation_choices = ['cutmix', 'jittering', 'mixup', 's1', 's2', 's3', 's4', 'js1', 'js2']
 """
 List of valid augmentation choices
 
