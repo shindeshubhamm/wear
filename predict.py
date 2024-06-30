@@ -58,6 +58,18 @@ labels_dict = {
 }
 
 
+def sort_data_sbjwise(data: np.ndarray) -> np.ndarray:
+    sorted_data = np.empty_like(data)
+    idx = 0
+
+    for sbj in np.unique(data[:, 0]):
+        sbj_data = data[data[:, 0] == sbj]
+        sorted_data[idx : idx + len(sbj_data)] = sbj_data
+        idx += len(sbj_data)
+
+    return sorted_data
+
+
 def main(args):
     model_name: str = args.model_name
     ckpt_path: str = args.ckpt_path
@@ -85,6 +97,9 @@ def main(args):
         if sbj_filename.endswith('.csv'):
             temp = pd.read_csv(os.path.join(testdata_path, sbj_filename), index_col=False).fillna(0).to_numpy()
             test_data = np.append(test_data, temp, axis=0)
+
+    # sort test_data subject wise
+    test_data = sort_data_sbjwise(test_data)
 
     if is_seen_data:
         original_labels = test_data[:, -1]
