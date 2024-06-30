@@ -3,6 +3,7 @@ import warnings
 warnings.filterwarnings('ignore', category=UserWarning)
 import argparse
 import datetime
+import json
 import os
 import sys
 import time
@@ -18,16 +19,6 @@ from utils.data_utils import unwindow_inertial_data
 from inertial_baseline.AttendAndDiscriminate import AttendAndDiscriminate
 from inertial_baseline.DeepConvLSTM import DeepConvLSTM
 
-# constants
-window_size = 50
-window_overlap = 50
-input_dim = 12
-conv_kernels = 64
-conv_kernel_size = 11
-lstm_units = 1024
-lstm_layers = 1
-dropout = 0.5
-batch_size = 100
 column_names = [
     'sbj_id',
     'right_arm_acc_x',
@@ -80,8 +71,14 @@ def main(args):
     if not testdata_path:
         raise ValueError('test_data cannot be empty.')
 
+    # get config
+    config_path = '/'.join(ckpt_path.split('/')[:-2]) + '/cfg.txt'
+    with open(config_path) as f:
+        c = f.read().replace('\'', '"').replace('True', 'true').replace('False', 'false')
+        config = json.loads(c)
+
     # load all csv files from testdata_path
-    test_data = np.empty((0, input_dim + 1))
+    test_data = np.empty((0, config['dataset']['input_dim'] + 1))
     testdata_dir = os.fsencode(testdata_path)
     for file in os.listdir(testdata_dir):
         sbj_filename = os.fsdecode(file)
@@ -94,24 +91,37 @@ def main(args):
     test_data = np.concatenate((test_data, zero_column), axis=1)
 
     # create dataset
-    test_dataset = InertialDataset(test_data, window_size, window_overlap)
-    test_loader = DataLoader(test_dataset, batch_size, shuffle=False)
+    test_dataset = InertialDataset(test_data, config['dataset']['window_size'], config['dataset']['window_overlap'])
+    test_loader = DataLoader(test_dataset, config['loader']['batch_size'], shuffle=False)
 
     # select model
     model = None
     if model_name == 'deepconvlstm':
         model = DeepConvLSTM(
-            input_dim,  # should match the input dimension used during training
+            config['dataset']['input_dim'],  # should match the input dimension used during training
             19,  # num_classes should match the number of classes used during training
-            window_size,  # should match the window size used during training
-            conv_kernels,
-            conv_kernel_size,
-            lstm_units,
-            lstm_layers,
-            dropout,
+            config['dataset']['window_size'],  # should match the window size used during training
+            config['model']['conv_kernels'],
+            config['model']['conv_kernel_size'],
+            config['model']['lstm_units'],
+            config['model']['lstm_layers'],
+            config['model']['dropout'],
         )
     elif model_name == 'attendanddiscriminate':
-        model = AttendAndDiscriminate(input_dim, 19, 1024, 64, 11, 1, False, 0.5, 0.0, 0.5, 'ReLU', 1)
+        model = AttendAndDiscriminate(
+            config['dataset']['input_dim'],  # should match the input dimension used during training
+            19,  # num_classes should match the number of classes used during training
+            config['model']['hidden_dim'],
+            config['model']['conv_kernels'],
+            config['model']['conv_kernel_size'],
+            config['model']['enc_layers'],
+            config['model']['enc_is_bidirectional'],
+            config['model']['dropout'],
+            config['model']['dropout_rnn'],
+            config['model']['dropout_cls'],
+            config['model']['activation'],
+            config['model']['sa_div'],
+        )
     else:
         raise ValueError('Unsupported model name.')
 
@@ -132,7 +142,13 @@ def main(args):
     predicted_labels = torch.argmax(all_predictions, dim=1).numpy()
 
     # unwindow
-    unwindowed_predictions, _ = unwindow_inertial_data(test_data, test_dataset.ids, predicted_labels, window_size, window_overlap)
+    unwindowed_predictions, _ = unwindow_inertial_data(
+        test_data,
+        test_dataset.ids,
+        predicted_labels,
+        config['dataset']['window_size'],
+        config['dataset']['window_overlap'],
+    )
 
     # error if length mismatch after unwindowing
     if len(unwindowed_predictions) != len(test_data):
