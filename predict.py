@@ -5,16 +5,15 @@ import argparse
 import datetime
 import json
 import os
-import sys
 import time
 
 import numpy as np
 import pandas as pd
+from sklearn.metrics import precision_score, recall_score, f1_score, confusion_matrix
 import torch
 from torch.utils.data import DataLoader
 
 from utils.torch_utils import InertialDataset
-from utils.os_utils import Logger
 from utils.data_utils import unwindow_inertial_data
 from inertial_baseline.AttendAndDiscriminate import AttendAndDiscriminate
 from inertial_baseline.DeepConvLSTM import DeepConvLSTM
@@ -63,6 +62,7 @@ def main(args):
     model_name: str = args.model_name
     ckpt_path: str = args.ckpt_path
     testdata_path: str = args.test_data
+    is_seen_data: bool = args.seen_data
 
     if not model_name:
         raise ValueError('model_name cannot be empty.')
@@ -78,13 +78,17 @@ def main(args):
         config = json.loads(c)
 
     # load all csv files from testdata_path
-    test_data = np.empty((0, config['dataset']['input_dim'] + 1))
+    test_data = np.empty((0, config['dataset']['input_dim'] + (2 if is_seen_data else 1)))
     testdata_dir = os.fsencode(testdata_path)
     for file in os.listdir(testdata_dir):
         sbj_filename = os.fsdecode(file)
         if sbj_filename.endswith('.csv'):
             temp = pd.read_csv(os.path.join(testdata_path, sbj_filename), index_col=False).fillna(0).to_numpy()
             test_data = np.append(test_data, temp, axis=0)
+
+    if is_seen_data:
+        original_labels = test_data[:, -1]
+        test_data = test_data[:, :-1]
 
     # match dimension
     zero_column = np.zeros((test_data.shape[0], 1))
@@ -174,6 +178,25 @@ def main(args):
         output_path = os.path.join(pred_logs_dir, f'sbj_{sbj}_2.csv' if sbj < 18 else f'sbj_{sbj}.csv')
         sbj_data.to_csv(output_path, index=False)
 
+    if is_seen_data:
+        predictions_int = unwindowed_predictions.astype(int)
+        predicted_labels = np.array([labels_dict[pred] for pred in predictions_int])
+        original_labels = np.array([str(label) for label in original_labels])
+        unique_labels = list(labels_dict.values())
+
+        conf_mat = confusion_matrix(original_labels, predicted_labels, normalize='true', labels=unique_labels)
+        v_acc = conf_mat.diagonal() / conf_mat.sum(axis=1)
+        v_prec = precision_score(original_labels, predicted_labels, average=None, zero_division=1, labels=unique_labels)
+        v_rec = recall_score(original_labels, predicted_labels, average=None, zero_division=1, labels=unique_labels)
+        v_f1 = f1_score(original_labels, predicted_labels, average=None, zero_division=1, labels=unique_labels)
+
+        block5 = ''
+        block5 += 'Acc {:>4.2f} (%)'.format(np.nanmean(v_acc) * 100)
+        block5 += '\nPrec {:>4.2f} (%)'.format(np.nanmean(v_prec) * 100)
+        block5 += '\nRec {:>4.2f} (%)'.format(np.nanmean(v_rec) * 100)
+        block5 += '\nF1 {:>4.2f} (%)\n'.format(np.nanmean(v_f1) * 100)
+        print(block5)
+
     print(f'Predictions saved to {pred_logs_dir}')
 
 
@@ -182,5 +205,6 @@ if __name__ == '__main__':
     parser.add_argument('--model_name', default='deepconvlstm', type=str, help='Name of the model used for training.')
     parser.add_argument('--ckpt_path', default='', type=str, help='Chekpoint to select for making predictions on test data.')
     parser.add_argument('--test_data', default='./test_data', type=str, help='Path for test data with csv files.')
+    parser.add_argument('--seen_data', default=False, type=bool, help='Whether the data is seen data.')
     args = parser.parse_args()
     main(args)
