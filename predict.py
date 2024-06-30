@@ -1,6 +1,6 @@
 import warnings
 
-warnings.filterwarnings('ignore', category=UserWarning)
+warnings.filterwarnings('ignore')
 import argparse
 import datetime
 import json
@@ -180,15 +180,15 @@ def main(args):
 
     if is_seen_data:
         predictions_int = unwindowed_predictions.astype(int)
-        predicted_labels = np.array([labels_dict[pred] for pred in predictions_int])
+        predictions = np.array([labels_dict[pred] for pred in predictions_int])
         original_labels = np.array([str(label) for label in original_labels])
         unique_labels = list(labels_dict.values())
 
-        conf_mat = confusion_matrix(original_labels, predicted_labels, normalize='true', labels=unique_labels)
+        conf_mat = confusion_matrix(original_labels, predictions, normalize='true', labels=unique_labels)
         v_acc = conf_mat.diagonal() / conf_mat.sum(axis=1)
-        v_prec = precision_score(original_labels, predicted_labels, average=None, zero_division=1, labels=unique_labels)
-        v_rec = recall_score(original_labels, predicted_labels, average=None, zero_division=1, labels=unique_labels)
-        v_f1 = f1_score(original_labels, predicted_labels, average=None, zero_division=1, labels=unique_labels)
+        v_prec = precision_score(original_labels, predictions, average=None, zero_division=1, labels=unique_labels)
+        v_rec = recall_score(original_labels, predictions, average=None, zero_division=1, labels=unique_labels)
+        v_f1 = f1_score(original_labels, predictions, average=None, zero_division=1, labels=unique_labels)
 
         block5 = ''
         block5 += 'Acc {:>4.2f} (%)'.format(np.nanmean(v_acc) * 100)
